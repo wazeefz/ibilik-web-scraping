@@ -1,9 +1,8 @@
 #Web Scraping ibilik
+ 
+library("pacman")
 
-library(rvest)
-library(RSelenium)
-library(tidyverse)
-library(data.table)
+p_load("RSelenium","RPostgreSQL","tidyverse","rvest","data.table")
 
 ######################################################################################################################################################
 
