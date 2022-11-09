@@ -2,9 +2,9 @@
 
 Date commence:   October 2022
 
-Maintainer: @wazeef
+Maintainer: @wazeefz
 
-Developer: @wazeef
+Developer: @wazeefz
 
 Objective: To scrape `https://www.ibilik.my` to get metadata from several categories.
 
