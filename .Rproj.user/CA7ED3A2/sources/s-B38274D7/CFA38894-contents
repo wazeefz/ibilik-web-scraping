@@ -1,0 +1,752 @@
+
+#Web Scraping mySPR
+
+library(rvest)
+library(RSelenium)
+library(tidyverse)
+library(data.table)
+
+######################################################################################################################################################
+
+date = gsub("-", "_", Sys.Date())
+
+url = "https://mysprsemak.spr.gov.my/semakan/keputusan/pru"
+
+driver = rsDriver(port = as.integer(sample(1000:10000, 1)), browser = "chrome", chromever = "105.0.5195.19")
+
+remDr = driver[["client"]]
+
+remDr$navigate(url)
+
+Sys.sleep(.5)
+
+######################################################################################################################################################
+
+nodefxn = function(nodename)  {
+  node1 = (nodename)
+  node1 = gsub(" ",".",node1)
+  node1 = gsub(":","\\\\:",node1)
+  
+  return(node1)
+  
+}
+
+######################################################################################################################################################
+
+#CLICKING SILA PILIH NEGERI BUTTON
+
+silapilihnegeri = function(){
+  nodename = nodefxn("select2-selection select2-selection--single font-bold")
+  nodename = paste0("span.",nodename)
+  
+  
+  click2 = read_html(remDr$getPageSource()[[1]]) %>%
+    html_nodes(nodename) %>% html_text()
+  
+  if(length(click2)!=0){
+    Sys.sleep(0.5)
+    x_btn = remDr$findElement(using = "css selector",
+                              value = "span.select2-selection__arrow")
+  }
+  
+  
+  x_btn$clickElement()
+  
+}
+
+
+######################################################################################################################################################
+
+mysprdata = data.frame()
+
+
+
+nodenamepru = nodefxn("pruId-tabs.flex.flex-row.mb-0.list-none pt-3 pb-4 overflow-x-auto")
+nodenamepru = paste0("ul.",nodenamepru, " li")
+
+
+clickpru = read_html(remDr$getPageSource()[[1]]) %>%
+  html_nodes("ul.pruId-tabs.flex.flex-row.mb-0.list-none.pt-3.pb-4.overflow-x-auto li") %>% html_text()
+
+if(length(clickpru)!=0){
+  Sys.sleep(0.1)
+  buttonpru = remDr$findElements(using = "css selector",
+                                 value = nodenamepru)
+  
+}
+
+for(i in 3:length(buttonpru)){
+  
+  buttonpru[[i]]$clickElement()
+  
+  nodenamenegeri = nodefxn("select2-results__options")
+  nodenamenegeri = paste0("ul.",nodenamenegeri, " li")
+ 
+  
+  silapilihnegeri()
+  
+  click = read_html(remDr$getPageSource()[[1]]) %>%
+    html_nodes(nodenamenegeri) %>% html_text()
+  
+  
+  if(length(click)!=0){
+    Sys.sleep(0.5)
+    buttonnegeri = remDr$findElements(using = "css selector",
+                                      value = nodenamenegeri)
+    
+  }
+  
+  for(j in 1:length(buttonnegeri)){
+    
+    if(j==length(buttonnegeri)){break}else{cat("NOW AT NEGERI",click[j+1],"\n")}
+    
+    if(j!=1){silapilihnegeri()}
+    
+    buttonnegeri = remDr$findElements(using = "css selector",
+                                      value = nodenamenegeri)
+    buttonnegeri[[j+1]]$clickElement()
+    
+    
+    
+    nodename1 = nodefxn("flex mb-0 list-none flex-wrap pt-3 pb-4 flex-row")
+    nodename1 = paste0("ul.",nodename1, " li")
+
+
+    clickbahpru = read_html(remDr$getPageSource()[[1]]) %>%
+      html_nodes(nodename1) %>% html_text()
+
+    if(length(clickbahpru)!=0){
+      Sys.sleep(0.1)
+      bahprubutton = remDr$findElements(using = "css selector",
+                                        value = nodename1)
+
+    }
+    for(k in 1:length(bahprubutton)){
+    # for(k in 1:length(bahprubutton)){
+      bahprubutton[[k]]$clickElement()
+      
+      if(k == 1){
+        nodename2 = nodefxn("text-sm md:text-base tab-parlimen-web accordion overflow-auto block")
+        nodename2 = paste0("div.",nodename2, " div")
+       
+        
+        clickparlimenlist = read_html(remDr$getPageSource()[[1]]) %>%
+          html_nodes(nodename2) %>% html_text()
+        
+        if(length(clickparlimenlist)!=0){
+          Sys.sleep(0.1)
+          parlimenlistbutton = remDr$findElements(using = "css selector",
+                                                  value = nodename2)
+          
+        }
+        
+        for(l in 1:length(parlimenlistbutton)){
+          parlimenlistbutton[[l]]$clickElement()
+          
+          Sys.sleep(0.5)
+          
+          nodenamekembali = nodefxn("mx-auto w-40 bg-primary p-2 rounded text-white text-center my-2 font-bold shadow-xl hover:bg-white hover:text-primary transition ease-in-out duration-300")
+          nodenamekembali = paste0("a.",nodenamekembali)
+         
+          clickkembali = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodenamekembali) %>% html_text()
+          if(length(clickkembali)!=0){
+            cat("NO RESULTS at I =",i,",J =",j,",K =",k,",M =",m,"\n")
+            kembali()
+            next()
+          }
+          
+          
+          nodename = nodefxn("sm:mx-16 sm:block hidden uppercase mx-auto text-md")
+          nodename = paste0("span.",nodename)
+          
+          extract = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract)!=0){
+            extract = extract
+          }else{
+            extract = NA 
+          }
+          
+          Jenis = extract[1]
+          
+          
+          
+          nodename = nodefxn("mx-auto uppercase text-sm my-2 font-bold")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract1 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract1)!=0){
+            extract1 = extract1
+          }else{
+            extract1 = NA 
+          }
+          
+          PRU = extract1[1]
+          Tarikh = extract1[2]
+          
+          nodename = nodefxn("text-center mx-auto uppercase text-sm mb-4 sm:my-4 font-bold")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract2 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract2)!=0){
+            extract2 = extract2
+          }else{
+            extract2 = NA 
+          }
+          
+          Menang = extract2
+          
+          nodename = nodefxn("text-center mx-auto text-4xl my-auto h-16")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract3 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract3)!=0){
+            extract3 = extract3
+          }else{
+            extract3 = NA 
+          }
+          
+          MajoritiUndi = extract3
+          
+          nodename = nodefxn("bg-primary p-2 uppercase border-b border-white text-white font-bold rounded-t-lg")
+          nodename = paste0("div.",nodename)
+          
+          extract4 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract4)!=0){
+            extract4 = extract4
+          }else{
+            extract4 = NA 
+          }
+          
+          KodDanNama = extract4
+          
+          nodename = nodefxn("select2-selection__rendered")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract5 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text()
+          if(length(extract5)!=0){
+            extract5 = extract5
+          }else{
+            extract5 = NA 
+          }
+          
+          Negeri = extract5
+
+#################################################          
+          # nodename = nodefxn("flex flex-col w-full justify-center mr-4")
+          # nodename = paste0("div.",nodename)
+
+          # extract7 = read_html(remDr$getPageSource()[[1]]) %>%
+          #   html_nodes(nodename) %>% html_text()
+          # if(length(extract7)!=0){
+          #   extract7 = extract7
+          # }else{
+          #   extract7 = NA 
+          # }
+          # 
+          # extract7 = paste(str_squish(extract7),collapse = '/ ')
+          # 
+          # nodename = nodefxn("grid grid-flow-row font-bold text-center items-center col-1 border-l border-t keputusan-nama-calon")
+          # nodename = paste0("span.",nodename)
+          
+          nodename = nodefxn("flex flex-col w-full justify-center mr-4")
+          nodename = paste0("div.",nodename, " span")
+          
+          
+          extract7 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text()
+          if(length(extract7)!=0){
+            extract7 = extract7
+          }else{
+            extract7 = NA 
+          }
+          
+          if(length(extract7) >= 1){
+            NamaCalon1 = extract7[1]
+          }else{
+            NamaCalon1 = NA
+          }
+          if(length(extract7) >= 2){
+            Parti1 = extract7[2]
+          }else{
+            Parti1 = NA
+          }
+          if(length(extract7) >= 3){
+            NamaCalon2 = extract7[3]
+          }else{
+            NamaCalon2 = NA
+          }
+          if(length(extract7) >= 4){
+            Parti2 = extract7[4]
+          }else{
+            Parti2 = NA
+          }
+          if(length(extract7) >= 5){
+            NamaCalon3 = extract7[5]
+          }else{
+            NamaCalon3 = NA
+          }
+          if(length(extract7) >= 6){
+            Parti3 = extract7[6]
+          }else{
+            Parti3 = NA
+          }
+          if(length(extract7) >= 7){
+            NamaCalon4 = extract7[7]
+          }else{
+            NamaCalon4 = NA
+          }
+          if(length(extract7) >= 8){
+            Parti4 = extract7[8]
+          }else{
+            Parti4 = NA
+          }
+          if(length(extract7) >= 9){
+            NamaCalon5 = extract7[9]
+          }else{
+            NamaCalon5 = NA
+          }
+          if(length(extract7) >= 10){
+            Parti5 = extract7[10]
+          }else{
+            Parti5 = NA
+          }
+          if(length(extract7) >= 11){
+            NamaCalon6 = extract7[11]
+          }else{
+            NamaCalon6 = NA
+          }
+          if(length(extract7) >= 12){
+            Parti6 = extract7[12]
+          }else{
+            Parti6 = NA
+          }
+          if(length(extract7) >= 13){
+            NamaCalon7 = extract7[13]
+          }else{
+            NamaCalon7 = NA
+          }
+          if(length(extract7) >= 14){
+            Parti7 = extract7[14]
+          }else{
+            Parti7 = NA
+          }
+          if(length(extract7) >= 15){
+            NamaCalon8 = extract7[15]
+          }else{
+            NamaCalon8 = NA
+          }
+          if(length(extract7) >= 16){
+            Parti8 = extract7[16]
+          }else{
+            Parti8 = NA
+          }
+          
+          
+          
+          
+          
+          
+          
+          
+          
+#################################################
+          
+          extract8 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract8)!=0){
+            extract8 = extract8
+          }else{
+            extract8 = NA 
+          }
+          
+          extract8 = paste(str_squish(extract8),collapse = '/ ')
+          
+          
+          df = data.frame(Jenis = Jenis,
+                          PRU = PRU,
+                          Negeri= Negeri,
+                          KodDanNama = KodDanNama,
+                          Tarikh = Tarikh,
+                          Menang = Menang,
+                          MajoritiUndi = MajoritiUndi,
+                          NamaCalon1 = NamaCalon1,
+                          NamaCalon2 = NamaCalon2,
+                          NamaCalon3 = NamaCalon3,
+                          NamaCalon4 = NamaCalon4,
+                          NamaCalon5 = NamaCalon5,
+                          NamaCalon6 = NamaCalon6,
+                          NamaCalon7 = NamaCalon7,
+                          NamaCalon8 = NamaCalon8,
+                          Parti1 = Parti1,
+                          Parti2 = Parti2,
+                          Parti3 = Parti3,
+                          Parti4 = Parti4,
+                          Parti5 = Parti5,
+                          Parti6 = Parti6,
+                          Parti7 = Parti7,
+                          Parti8 = Parti8,
+                          BilUndi = extract8)
+          
+          
+          
+          mysprdata = rbind(mysprdata, df)
+          
+          
+          
+          
+          Sys.sleep(0.1)
+        }
+        
+      }
+      
+      if(k == 2){
+        
+        nodename3 = nodefxn("text-sm md:text-base space-y-2 mb-2 overflow-auto block")
+        nodename3 = paste0("div.",nodename3, " div")
+        
+        
+        clickdunlist = read_html(remDr$getPageSource()[[1]]) %>%
+          html_nodes(nodename3) %>% html_text()
+        
+        if(length(clickdunlist)!=0){
+          Sys.sleep(0.1)
+          dunlistbutton = remDr$findElements(using = "css selector",
+                                             value = nodename3)
+          
+        }
+        
+        for(m in 1:length(dunlistbutton)){
+          
+          clickdunlist = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename3) %>% html_text()
+          
+          if(length(clickdunlist)!=0){
+            Sys.sleep(0.1)
+            dunlistbutton = remDr$findElements(using = "css selector",
+                                               value = nodename3)
+            
+          }
+          
+          dunlistbutton[[m]]$clickElement()
+          
+          Sys.sleep(0.5)
+          
+          nodenamekembali = nodefxn("mx-auto w-40 bg-primary p-2 rounded text-white text-center my-2 font-bold shadow-xl hover:bg-white hover:text-primary transition ease-in-out duration-300")
+          nodenamekembali = paste0("a.",nodenamekembali)
+          
+          
+          clickkembali = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodenamekembali) %>% html_text()
+          if(length(clickkembali)!=0){
+            cat("NO RESULTS at I =",i,",J =",j,",K =",k,",M =",m,"\n")
+            kembali()
+            next()
+          }
+          
+          nodename = nodefxn("sm:mx-16 sm:block hidden uppercase mx-auto text-md")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract)!=0){
+            extract = extract
+          }else{
+            extract = NA 
+          }
+          
+          Jenis = extract[1]
+          
+          
+          
+          nodename = nodefxn("mx-auto uppercase text-sm my-2 font-bold")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract1 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract1)!=0){
+            extract1 = extract1
+          }else{
+            extract1 = NA 
+          }
+          
+          PRU = extract1[1]
+          Tarikh = extract1[2]
+          
+          nodename = nodefxn("text-center mx-auto uppercase text-sm mb-4 sm:my-4 font-bold")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract2 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract2)!=0){
+            extract2 = extract2
+          }else{
+            extract2 = NA 
+          }
+          
+          Menang = extract2
+          
+          nodename = nodefxn("text-center mx-auto text-4xl my-auto h-16")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract3 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract3)!=0){
+            extract3 = extract3
+          }else{
+            extract3 = NA 
+          }
+          
+          MajoritiUndi = extract3
+          
+          nodename = nodefxn("bg-primary p-2 uppercase border-b border-white text-white font-bold rounded-t-lg")
+          nodename = paste0("div.",nodename)
+          
+          extract4 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract4)!=0){
+            extract4 = extract4
+          }else{
+            extract4 = NA 
+          }
+          
+          KodDanNama = extract4
+          
+          nodename = nodefxn("select2-selection__rendered")
+          nodename = paste0("span.",nodename)
+          
+          
+          extract5 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text()
+          if(length(extract5)!=0){
+            extract5 = extract5
+          }else{
+            extract5 = NA 
+          }
+          
+          Negeri = extract5
+          
+          #################################################          
+          # nodename = nodefxn("flex flex-col w-full justify-center mr-4")
+          # nodename = paste0("div.",nodename)
+          
+          # extract7 = read_html(remDr$getPageSource()[[1]]) %>%
+          #   html_nodes(nodename) %>% html_text()
+          # if(length(extract7)!=0){
+          #   extract7 = extract7
+          # }else{
+          #   extract7 = NA 
+          # }
+          # 
+          # extract7 = paste(str_squish(extract7),collapse = '/ ')
+          # 
+          # nodename = nodefxn("grid grid-flow-row font-bold text-center items-center col-1 border-l border-t keputusan-nama-calon")
+          # nodename = paste0("span.",nodename)
+          
+          nodename = nodefxn("flex flex-col w-full justify-center mr-4")
+          nodename = paste0("div.",nodename, " span")
+          
+          
+          extract7 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text()
+          if(length(extract7)!=0){
+            extract7 = extract7
+          }else{
+            extract7 = NA 
+          }
+          
+          if(length(extract7) >= 1){
+            NamaCalon1 = extract7[1]
+          }else{
+            NamaCalon1 = NA
+          }
+          if(length(extract7) >= 2){
+            Parti1 = extract7[2]
+          }else{
+            Parti1 = NA
+          }
+          if(length(extract7) >= 3){
+            NamaCalon2 = extract7[3]
+          }else{
+            NamaCalon2 = NA
+          }
+          if(length(extract7) >= 4){
+            Parti2 = extract7[4]
+          }else{
+            Parti2 = NA
+          }
+          if(length(extract7) >= 5){
+            NamaCalon3 = extract7[5]
+          }else{
+            NamaCalon3 = NA
+          }
+          if(length(extract7) >= 6){
+            Parti3 = extract7[6]
+          }else{
+            Parti3 = NA
+          }
+          if(length(extract7) >= 7){
+            NamaCalon4 = extract7[7]
+          }else{
+            NamaCalon4 = NA
+          }
+          if(length(extract7) >= 8){
+            Parti4 = extract7[8]
+          }else{
+            Parti4 = NA
+          }
+          if(length(extract7) >= 9){
+            NamaCalon5 = extract7[9]
+          }else{
+            NamaCalon5 = NA
+          }
+          if(length(extract7) >= 10){
+            Parti5 = extract7[10]
+          }else{
+            Parti5 = NA
+          }
+          if(length(extract7) >= 11){
+            NamaCalon6 = extract7[11]
+          }else{
+            NamaCalon6 = NA
+          }
+          if(length(extract7) >= 12){
+            Parti6 = extract7[12]
+          }else{
+            Parti6 = NA
+          }
+          if(length(extract7) >= 13){
+            NamaCalon7 = extract7[13]
+          }else{
+            NamaCalon7 = NA
+          }
+          if(length(extract7) >= 14){
+            Parti7 = extract7[14]
+          }else{
+            Parti7 = NA
+          }
+          if(length(extract7) >= 15){
+            NamaCalon8 = extract7[15]
+          }else{
+            NamaCalon8 = NA
+          }
+          if(length(extract7) >= 16){
+            Parti8 = extract7[16]
+          }else{
+            Parti8 = NA
+          }
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          #################################################
+          
+          extract8 = read_html(remDr$getPageSource()[[1]]) %>%
+            html_nodes(nodename) %>% html_text() 
+          if(length(extract8)!=0){
+            extract8 = extract8
+          }else{
+            extract8 = NA 
+          }
+          
+          extract8 = paste(str_squish(extract8),collapse = '/ ')
+          
+          
+          df = data.frame(Jenis = Jenis,
+                          PRU = PRU,
+                          Negeri= Negeri,
+                          KodDanNama = KodDanNama,
+                          Tarikh = Tarikh,
+                          Menang = Menang,
+                          MajoritiUndi = MajoritiUndi,
+                          NamaCalon1 = NamaCalon1,
+                          NamaCalon2 = NamaCalon2,
+                          NamaCalon3 = NamaCalon3,
+                          NamaCalon4 = NamaCalon4,
+                          NamaCalon5 = NamaCalon5,
+                          NamaCalon6 = NamaCalon6,
+                          NamaCalon7 = NamaCalon7,
+                          NamaCalon8 = NamaCalon8,
+                          Parti1 = Parti1,
+                          Parti2 = Parti2,
+                          Parti3 = Parti3,
+                          Parti4 = Parti4,
+                          Parti5 = Parti5,
+                          Parti6 = Parti6,
+                          Parti7 = Parti7,
+                          Parti8 = Parti8,
+                          BilUndi = extract8)
+          
+          
+          
+          mysprdata = rbind(mysprdata, df)
+          
+          
+          
+          
+          Sys.sleep(0.1)
+        }
+
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      Sys.sleep(0.2)
+    }
+
+    
+    
+  }
+  
+
+  Sys.sleep(0.2)
+}
+
+
+mysprdata2 = mysprdata
+
+######################################################################################################################################################
+
+data.table::fwrite(mysprdata2, paste0("//10.13.10.22/dataSandbox/scraping/misc/myspr/first_mysprpru12_scrape", date, ".csv"))
+
+
+# mysprdataprevious2 = fread("//10.13.10.22/dataSandbox/scraping/misc/myspr/first_myspr_scrape2022_10_20.csv")
+# 
+# 
+# # mysprcomplete = rbind(mysprdataprevious, mysprdata)
+# 
+# 
+# data.table::fwrite(mysprcomplete, paste0("//10.13.10.22/dataSandbox/scraping/misc/myspr/mysprraw", date, ".csv"))
+
+
+
