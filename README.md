@@ -1,4 +1,4 @@
-# MYDIN Scraper
+# iBilik Scraper
 
 Date commence:   October 2022
 
