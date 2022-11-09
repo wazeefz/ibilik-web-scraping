@@ -11,11 +11,33 @@ date = gsub("-", "_", Sys.Date())
 
 url = "https://www.ibilik.my/rooms?location_search_name=&page=1"
 
-driver = rsDriver(port = as.integer(sample(1000:10000, 1)), browser = "chrome", chromever = "105.0.5195.19")
+remDr <- RSelenium::remoteDriver(remoteServerAddr = "10.13.11.18",
+                      port = 4444L,
+                      browserName = "chrome")
+ 
 
-remDr = driver[["client"]]
+remDr$open()
+
+# driver = rsDriver(port = as.integer(sample(1000:10000, 1)), browser = "chrome", chromever = "105.0.5195.19")
+
+# remDr = driver[["client"]]
 
 remDr$navigate(url)
+
+
+# Configure PostgreSQL database
+pw <- {
+  "wtgwrgergerg3354"
+}
+
+# loads the PostgreSQL driver
+drv <- RPostgreSQL::PostgreSQL()
+# creates a connection to the postgres database
+# note that "con" will be used later in each connection to the database
+con <- dbConnect(drv, dbname = "ibilik",
+                 host = "10.13.11.18", port = 5432,
+                 user = "docker", password = pw)
+rm(pw) # removes the password 
 
 Sys.sleep(.5)
 
@@ -175,11 +197,6 @@ for(i in 1:length(biliklink)){
 
 date = gsub("-", "_", Sys.Date())
 
-data.table::fwrite(ibilikdata, paste0("//10.13.10.22/dataSandbox/scraping/misc/ibilik/ibilik_raw", date, ".csv"))
+# data.table::fwrite(ibilikdata, paste0("//10.13.10.22/dataSandbox/scraping/misc/ibilik/ibilik_raw", date, ".csv"))
 
-
-
-
-
-
-
+dbWriteTable(con, "description", ibilikdata, append = TRUE, row.names = FALSE)
